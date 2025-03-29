@@ -40,27 +40,27 @@ void* philosopherThread(void* thdata){
     for (int iter = 0; iter < maxIterations || infiniteIterationsFLAG ; iter++)
     {
         //Think
-        printf("Philosopher %d is thinking for %d. time.\n", philosopherID, iter);
+        printf("Philosopher %d  is thinking       for the %d. time.\n", philosopherID, iter);
         usleep(sleepTime);
 
         //Try to get forks
-        printf("Philosopher %d is trying to eat for %d. time.\n", philosopherID, iter);
+        printf("Philosopher %d  is trying to eat  for the %d. time.\n", philosopherID, iter);
         pthread_mutex_lock(&forks[firstFork]);
-        if (printForkLogsFLAG) printf("Fork %d picked up by Ph.%d.\n", firstFork, philosopherID);
+        if (printForkLogsFLAG) printf("\t Fork %d picked up by Ph.%d.\n", firstFork, philosopherID);
         pthread_mutex_lock(&forks[secondFork]);
-        if (printForkLogsFLAG) printf("Fork %d picked up by Ph.%d.\n", secondFork, philosopherID);
+        if (printForkLogsFLAG) printf("\t Fork %d picked up by Ph.%d.\n", secondFork, philosopherID);
         
         //Eat
-        printf("Philosopher %d is eating for %d. time.\n", philosopherID, iter);
+        printf("Philosopher %d  is eating         for the %d. time.\n", philosopherID, iter);
         usleep(2*sleepTime);
         timesEaten++;
 
         //Give forks back
+        if (printForkLogsFLAG) printf("\t Fork %d put down by Ph.%d.\n", firstFork, philosopherID);
         pthread_mutex_unlock(&forks[firstFork]);
-        if (printForkLogsFLAG) printf("Fork %d put down by Ph.%d.\n", firstFork, philosopherID);
+        if (printForkLogsFLAG) printf("\t Fork %d put down by Ph.%d.\n", secondFork, philosopherID);
         pthread_mutex_unlock(&forks[secondFork]);
-        if (printForkLogsFLAG) printf("Fork %d put down by Ph.%d.\n", secondFork, philosopherID);
-        printf("Philosopher %d finished eating. for %d. time\n", philosopherID, iter);
+        printf("Philosopher %d  finished eating   for the %d. time.\n", philosopherID, iter);
     }
     
     
@@ -79,8 +79,8 @@ int main(int argc, char* argv[])
 
     if (argc < 5){
         printf(
-            "\n ERROR: Not enough program arguments.\n"
-            " > Please provide arguments as follows : /PROGRAM_NAME/ " 
+            "\nERROR: Not enough program arguments.\n"
+            "# Please provide arguments as follows : /PROGRAM_NAME/ " 
             "<Number of philosophers (as int)> <Number of milisec. that philosopher will think (as int)> <Number of iterations per philosopher (as int, '-1' if infinite)> <Flag for writing fork logs (as 0 or 1)>\n");
         exit(1);
     }
