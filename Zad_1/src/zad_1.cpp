@@ -2,7 +2,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <vector>
 
 
 
@@ -16,7 +15,7 @@ pthread_mutex_t* forks;
 pthread_t* threadIDs;
 
 
-void* philosopherThread(void* thdata){
+void* philosopherThread(void* thdata){ 
     int timesEaten = 0;
     int philosopherID = *(int*)thdata;
     delete (int*)thdata;
