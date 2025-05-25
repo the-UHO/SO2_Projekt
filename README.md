@@ -41,3 +41,27 @@ W programie wątki reprezentują filozofów. Każdy z nich wykonuje pętlę dzia
 Widelce zostały zamodelowane z użyciem tablicy muteksów `pthread_mutex_t`, co zapewnia, że gdy widelec jest podniesiony przez jednego filozofa inny nie będzie mógł go użyć.
 
 W celu zapobiegania zakleszczaniu został użyty mechanizm hierarchicznego dostępu do widelców - każdy filozof musi najpierw wziąć widelec o niższym indeksie, a następnie ten o wyższym.
+
+****
+****
+
+# Projekt 2
+
+## Instrukcje uruchomienia projektu  
+
+1. Aby uruchomić program dla drugiego projektu, należy przejść do folderu `Zad_2/src/output` i uruchomić program `zad_2.exe`.  
+
+2. Program wymaga podania jednego argumentu będącego liczbą klientów
+
+
+## Opis programu
+
+Program napisałem z użyciem biblioteki `pthreads`, używając muteksów (`pthread_mutex_t`) i zmiennych warunkowych (`pthread_cond_t`).
+
+Program symuluje serwer czatu i użytkowników będących klientami serwera.
+Użytkownicy wysyłają wiadomości do kolejki którą obsługuje serwer, rozsyłając do wszystkich klientów otrzymane wiadomości i uzupełniając ich historię czatu. 
+
+Symulowani użytkownicy, korzystając z wysłanej im przez serwer historii czatu, odpowiadają na wiadomości innych.
+
+Zmienna warunkowa jest używana w celu powiadomienia serwera o wydarzeniu wysłania wiadomości.
+Muteksy zapobiegają jednoczesnemu dostępowi do kolejki zarówno serwera i jak i wielu klientów na raz.
