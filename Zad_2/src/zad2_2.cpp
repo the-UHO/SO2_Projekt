@@ -3,12 +3,13 @@
 #include <string>
 #include <unistd.h>
 #include <queue>
+#include <sstream>
 
 
 #define DEBUGLOG(msg) cout << "#DEBUG : " << msg <<" #\n";
 
 
-using std::cout, std::cin, std::endl, std::string, std::to_string, std::queue;
+using std::cout, std::cin, std::endl, std::string, std::to_string, std::queue, std::vector;
 
 
 int handle_TUI_display(int selection);
@@ -19,11 +20,11 @@ void* serverThread(void* thdata);
 
 
 pthread_t server;
-pthread_t* clients;
+vector<pthread_t> clients;
 int clientsNum;
 bool serverOnline;
 string serverLog;
-string* chatHisoryClient;
+vector<string> chatHisoryClient;
 
 struct Message {
     int clientID;
@@ -66,6 +67,9 @@ void* serverThread(void* thdata){
             if (i != msg.clientID){
                 chatHisoryClient[i] += "Client " + std::to_string(msg.clientID) + ": " + msg.text + "\n";
             }
+            if (i == msg.clientID){
+                chatHisoryClient[i] += "Me: " + msg.text + "\n";
+            }
         }
     }
 
@@ -81,7 +85,7 @@ void* clientThread(void* thdata){
 
     string name = "Client " + to_string(clientID);
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i) { //3 test messages
         string msg = name + " message " + to_string(i + 1);
 
         pthread_mutex_lock(&msgQueueMutex);
@@ -90,7 +94,49 @@ void* clientThread(void* thdata){
 
         pthread_cond_signal(&msgQueueConditional);
 
-        usleep(1000);
+        usleep(9000000);
+    }
+
+    //Relpy to other client's messages
+    vector<string> messagesRepliedTo;
+    int respondingTime = 0;
+    while (respondingTime < 1){
+        pthread_mutex_lock(&msgQueueMutex);
+        string myChatHistory = chatHisoryClient[clientID];
+        pthread_mutex_unlock(&msgQueueMutex);
+
+        //Check myChatHistory lines
+        std::stringstream strstr(myChatHistory);
+        string line;
+        while (std::getline(strstr, line)){
+            //Check for messages from other clients
+            if (line.find("Me: ") != 0){
+                //Break if already replied to this message
+                bool repliedFlag = false;
+                for (int i = 0; i < messagesRepliedTo.size(); i++){
+                    if (line == messagesRepliedTo[i]){
+                        repliedFlag = true;
+                        break;
+                    }
+                }
+
+                //Reply to unreplied message
+                if (!repliedFlag){
+                    messagesRepliedTo.push_back(line);
+
+                    //Parse original message and make response
+                    //Reply to message
+                    string myReply = name + " reply to " + line;
+                    pthread_mutex_lock(&msgQueueMutex);
+                    msgQueue.push({clientID, myReply});
+                    pthread_mutex_unlock(&msgQueueMutex);
+
+                    pthread_cond_signal(&msgQueueConditional);
+                }
+            }
+        }
+        usleep(5000000);
+        respondingTime ++;
     }
 
     pthread_exit(NULL);
@@ -121,8 +167,8 @@ int main(int argc, char* argv[]){
     serverOnline = true;
     rt = pthread_create(&server, NULL, serverThread, NULL);
     //Creating client threads
-    clients = new pthread_t[clientsNum];
-    chatHisoryClient = new string[clientsNum];
+    clients.resize(clientsNum);
+    chatHisoryClient.resize(clientsNum);
     if (rt){
         printf("\n ERROR: Return code from pthread_create : %d \n", rt);
         exit(10);
@@ -136,7 +182,7 @@ int main(int argc, char* argv[]){
         }
     }
 
-    usleep(100000);
+    usleep(10000);
     int usrInpt = -1;
     while (usrInpt){
         usrInpt = handle_TUI_display(usrInpt);
@@ -151,7 +197,6 @@ int main(int argc, char* argv[]){
             printf("\n ERROR: Return code from pthread_join : %d \n", rt);
             exit(21);
         }
-        //printf("Thread %llu joined with status : %d \n", clients[i], *(int*)thStatus);//???
     }
     //Joining server thread
     serverOnline = false;
@@ -165,12 +210,11 @@ int main(int argc, char* argv[]){
         printf("\n ERROR: Return code from pthread_join : %d \n", rt);
         exit(11);
     }
-    //printf("Thread %llu joined with status : %d \n", server, *(int*)thStatus);//???
     
     pthread_mutex_destroy(&msgQueueMutex);
     pthread_cond_destroy(&msgQueueConditional);
-    delete[] clients;
-    delete[] chatHisoryClient;
+    //delete[] clients;//---
+    //delete[] chatHisoryClient;//---
 
     cout << "\nEnding main thread.";
     cout << "\n>>> Program termination <<<\n";
@@ -201,7 +245,7 @@ int handle_TUI_display(int selection){
              << serverLog
              << "--------------------------- \n"
              ;
-        while (selection != 9) 
+        while (!(selection == 9 || selection == 0)) 
             selection = handle_TUI_selection_input("Enter 9 to continue: ");
         break;
     case 2:
@@ -212,7 +256,7 @@ int handle_TUI_display(int selection){
                 " 9) Back to menu \n"
                 "--------------------------- \n"
              ;
-        while (!(selection == 9 || selection == 21)) 
+        while (!(selection == 0 || selection == 9 || selection == 21)) 
             selection = handle_TUI_selection_input("Enter option: ");
         break;
     case 21:
@@ -223,10 +267,10 @@ int handle_TUI_display(int selection){
         cout << "--------------------------- \n"
              << chatHisoryClient[selection]
              << "--------------------------- \n";
-        selection = -1
-        while (selection != 9) 
+        selection = -1;
+        while (!(selection == 9 || selection == 0)) 
             selection = handle_TUI_selection_input("Enter 9 to continue: ");
-            break;
+        break;
     }
     return selection;
 }
